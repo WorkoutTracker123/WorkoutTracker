@@ -1,1 +1,2567 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Discipline Tracker Pro</title>
+    <style>
+        /* ========== CSS VARIABLES ========== */
+        :root {
+            --bg-primary: #0a0a0a;
+            --bg-secondary: #151515;
+            --bg-tertiary: #1f1f1f;
+            --accent: #d4af37;
+            --accent-dim: #8b7424;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0a0;
+            --text-tertiary: #606060;
+            --border: rgba(212, 175, 55, 0.2);
+            --shadow: rgba(0, 0, 0, 0.5);
+            --success: #4ade80;
+            --danger: #ef4444;
+            --warning: #fbbf24;
+            --overlay: rgba(0, 0, 0, 0.85);
+        }
+
+        /* ========== GLOBAL ========== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* ========== LAYOUT ========== */
+        .app-container {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* ========== SIDEBAR ========== */
+        .sidebar {
+            width: 300px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            z-index: 100;
+            overflow-y: auto;
+        }
+
+        .sidebar.collapsed {
+            transform: translateX(-100%);
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg-tertiary);
+        }
+
+        .logo {
+            font-size: 18px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            color: var(--accent);
+            text-transform: uppercase;
+            margin-bottom: 16px;
+        }
+
+        .stats-mini {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .stat-mini {
+            background: var(--bg-primary);
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            text-align: center;
+        }
+
+        .stat-mini-value {
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--accent);
+            font-family: 'Courier New', monospace;
+        }
+
+        .stat-mini-label {
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-tertiary);
+            margin-top: 2px;
+        }
+
+        .quick-stats {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg-secondary);
+        }
+
+        .quick-stats-title {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-tertiary);
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+
+        .quick-stat-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+
+        .quick-stat-label {
+            color: var(--text-secondary);
+        }
+
+        .quick-stat-value {
+            color: var(--accent);
+            font-weight: 600;
+            font-family: 'Courier New', monospace;
+        }
+
+        .weeks-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px;
+        }
+
+        .week-item {
+            padding: 12px 14px;
+            margin-bottom: 4px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid transparent;
+        }
+
+        .week-item:hover {
+            background: var(--bg-tertiary);
+            border-color: var(--border);
+        }
+
+        .week-item.active {
+            background: var(--accent);
+            color: var(--bg-primary);
+            font-weight: 600;
+        }
+
+        .week-name {
+            font-size: 13px;
+        }
+
+        .week-progress {
+            font-size: 11px;
+            font-family: 'Courier New', monospace;
+            opacity: 0.8;
+        }
+
+        .add-week-btn {
+            margin: 12px;
+            padding: 12px;
+            background: var(--accent);
+            color: var(--bg-primary);
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.2s;
+        }
+
+        .add-week-btn:hover {
+            background: var(--text-primary);
+            transform: translateY(-1px);
+        }
+
+        /* ========== MAIN CONTENT ========== */
+        .main-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+        }
+
+        .mobile-header {
+            display: none;
+            padding: 16px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            align-items: center;
+            gap: 16px;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+
+        .menu-toggle {
+            width: 32px;
+            height: 32px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            padding: 4px;
+        }
+
+        .menu-toggle span {
+            width: 100%;
+            height: 2px;
+            background: var(--text-primary);
+            transition: all 0.3s;
+        }
+
+        .top-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .week-title {
+            font-size: 24px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+
+        .controls-group {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 8px 14px;
+            border: 1px solid var(--border);
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .btn:hover {
+            background: var(--bg-tertiary);
+            border-color: var(--accent);
+        }
+
+        .btn.active, .btn.primary {
+            background: var(--accent);
+            color: var(--bg-primary);
+            border-color: var(--accent);
+        }
+
+        .btn-small {
+            padding: 6px 10px;
+            font-size: 11px;
+        }
+
+        /* ========== TABS ========== */
+        .tabs {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--border);
+            overflow-x: auto;
+        }
+
+        .tab {
+            padding: 10px 18px;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.2s;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px;
+            white-space: nowrap;
+        }
+
+        .tab:hover {
+            color: var(--text-primary);
+        }
+
+        .tab.active {
+            color: var(--accent);
+            border-bottom-color: var(--accent);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* ========== CARDS ========== */
+        .card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            transition: all 0.3s;
+        }
+
+        .card:hover {
+            border-color: var(--accent);
+            box-shadow: 0 4px 20px var(--shadow);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .card-title {
+            font-size: 15px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--accent);
+        }
+
+        .card-compact {
+            padding: 14px;
+        }
+
+        /* ========== MODE SELECTOR ========== */
+        .mode-selector {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .mode-btn {
+            padding: 14px;
+            border: 2px solid var(--border);
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .mode-btn:hover {
+            border-color: var(--accent);
+        }
+
+        .mode-btn.active {
+            border-color: var(--accent);
+            background: var(--accent);
+            color: var(--bg-primary);
+        }
+
+        .mode-title {
+            font-weight: 700;
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+
+        .mode-desc {
+            font-size: 11px;
+            opacity: 0.7;
+        }
+
+        /* ========== EXERCISES ========== */
+        .exercises-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .exercise-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            background: var(--bg-tertiary);
+            border-radius: 6px;
+            border: 1px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .exercise-item:hover {
+            border-color: var(--border);
+        }
+
+        .exercise-input {
+            flex: 1;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 7px 10px;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+
+        .exercise-input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .remove-btn {
+            background: var(--danger);
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+            transition: all 0.2s;
+        }
+
+        .remove-btn:hover {
+            opacity: 0.8;
+        }
+
+        /* ========== WORKOUT GRID ========== */
+        .workout-grid {
+            display: grid;
+            grid-template-columns: 180px repeat(6, 1fr);
+            gap: 6px;
+            margin-top: 14px;
+        }
+
+        .grid-header {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-tertiary);
+            font-weight: 600;
+            padding: 6px;
+            text-align: center;
+        }
+
+        .grid-header.rest-day {
+            color: var(--warning);
+        }
+
+        .exercise-label {
+            padding: 10px;
+            background: var(--bg-tertiary);
+            border-radius: 5px;
+            font-size: 12px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+        }
+
+        .checkbox-cell {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 6px;
+        }
+
+        .checkbox-cell.rest-day {
+            opacity: 0.3;
+        }
+
+        .custom-checkbox {
+            width: 28px;
+            height: 28px;
+            border: 2px solid var(--border);
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .custom-checkbox:hover {
+            border-color: var(--accent);
+        }
+
+        .custom-checkbox.checked {
+            background: var(--accent);
+            border-color: var(--accent);
+        }
+
+        .custom-checkbox.checked::after {
+            content: '✓';
+            color: var(--bg-primary);
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        /* ========== DAILY HABITS ========== */
+        .habits-grid {
+            display: grid;
+            grid-template-columns: 140px repeat(7, 1fr);
+            gap: 6px;
+            margin-top: 14px;
+        }
+
+        .habit-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px;
+            background: var(--bg-tertiary);
+            border-radius: 5px;
+        }
+
+        .habit-input {
+            flex: 1;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 6px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        .habit-input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .small-checkbox {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--border);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .small-checkbox:hover {
+            border-color: var(--accent);
+        }
+
+        .small-checkbox.checked {
+            background: var(--success);
+            border-color: var(--success);
+        }
+
+        .small-checkbox.checked::after {
+            content: '✓';
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        /* ========== PROGRESS BAR ========== */
+        .progress-section {
+            margin-top: 20px;
+        }
+
+        .progress-bar-container {
+            height: 20px;
+            background: var(--bg-tertiary);
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            position: relative;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-dim), var(--accent));
+            transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 10px;
+        }
+
+        .progress-percentage {
+            font-size: 11px;
+            font-weight: 700;
+            font-family: 'Courier New', monospace;
+            color: var(--bg-primary);
+        }
+
+        .badges-container {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 16px;
+            font-weight: 700;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge.perfect {
+            background: var(--success);
+            color: var(--bg-primary);
+            animation: pulse 2s infinite;
+        }
+
+        .badge.goal-met {
+            background: var(--accent);
+            color: var(--bg-primary);
+        }
+
+        .badge.behind {
+            background: var(--warning);
+            color: var(--bg-primary);
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        /* ========== NOTES ========== */
+        .notes-area {
+            width: 100%;
+            min-height: 100px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-family: inherit;
+            resize: vertical;
+        }
+
+        .notes-area:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        /* ========== STATS DASHBOARD ========== */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 14px;
+        }
+
+        .stat-card {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            text-align: center;
+            transition: all 0.2s;
+        }
+
+        .stat-card:hover {
+            border-color: var(--accent);
+            transform: translateY(-2px);
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 800;
+            color: var(--accent);
+            font-family: 'Courier New', monospace;
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+        }
+
+        .stat-sublabel {
+            font-size: 10px;
+            color: var(--text-tertiary);
+            margin-top: 4px;
+        }
+
+        /* ========== MILESTONES ========== */
+        .milestones-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 10px;
+        }
+
+        .milestone {
+            background: var(--bg-tertiary);
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            padding: 14px;
+            text-align: center;
+            transition: all 0.2s;
+        }
+
+        .milestone.unlocked {
+            border-color: var(--accent);
+            background: linear-gradient(135deg, var(--bg-tertiary), rgba(212, 175, 55, 0.1));
+        }
+
+        .milestone.locked {
+            opacity: 0.4;
+        }
+
+        .milestone-icon {
+            font-size: 28px;
+            margin-bottom: 6px;
+        }
+
+        .milestone-title {
+            font-size: 11px;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .milestone-desc {
+            font-size: 9px;
+            color: var(--text-tertiary);
+        }
+
+        /* ========== TEMPLATES ========== */
+        .templates-grid {
+            display: grid;
+            gap: 10px;
+        }
+
+        .template-item {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .template-item:hover {
+            border-color: var(--accent);
+            background: var(--bg-secondary);
+        }
+
+        .template-info {
+            flex: 1;
+        }
+
+        .template-name {
+            font-weight: 600;
+            font-size: 13px;
+            margin-bottom: 2px;
+        }
+
+        .template-exercises {
+            font-size: 11px;
+            color: var(--text-tertiary);
+        }
+
+        .template-actions {
+            display: flex;
+            gap: 6px;
+        }
+
+        /* ========== COMPARISON ========== */
+        .comparison-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .comparison-week {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 14px;
+        }
+
+        .comparison-title {
+            font-weight: 600;
+            font-size: 13px;
+            margin-bottom: 10px;
+            color: var(--accent);
+        }
+
+        .comparison-stat {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+            font-size: 12px;
+        }
+
+        .comparison-photos {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .comparison-photo {
+            aspect-ratio: 3/4;
+            background: var(--bg-primary);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .comparison-photo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* ========== PHOTO GRID ========== */
+        .photo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 12px;
+        }
+
+        .photo-upload {
+            border: 2px dashed var(--border);
+            border-radius: 6px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            overflow: hidden;
+            aspect-ratio: 3/4;
+        }
+
+        .photo-upload:hover {
+            border-color: var(--accent);
+        }
+
+        .photo-upload input {
+            display: none;
+        }
+
+        .photo-preview {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        .photo-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-tertiary);
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ========== CHART ========== */
+        .chart-container {
+            width: 100%;
+            height: 280px;
+            position: relative;
+        }
+
+        #progressChart {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* ========== TIMER ========== */
+        .timer-display {
+            font-size: 40px;
+            font-weight: 800;
+            font-family: 'Courier New', monospace;
+            color: var(--accent);
+            text-align: center;
+            margin: 16px 0;
+        }
+
+        .timer-controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        /* ========== THEME PICKER ========== */
+        .theme-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+            gap: 10px;
+        }
+
+        .theme-option {
+            padding: 12px;
+            border: 2px solid var(--border);
+            border-radius: 6px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+            background: var(--bg-tertiary);
+        }
+
+        .theme-option:hover {
+            border-color: var(--accent);
+            transform: translateY(-2px);
+        }
+
+        .theme-option.active {
+            border-color: var(--accent);
+            background: var(--accent);
+            color: var(--bg-primary);
+        }
+
+        .theme-preview {
+            width: 100%;
+            height: 32px;
+            border-radius: 4px;
+            margin-bottom: 6px;
+        }
+
+        .theme-name {
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        /* ========== MODAL ========== */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--overlay);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 24px;
+            max-width: 600px;
+            width: 100%;
+            max-height: 85vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            color: var(--accent);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-close {
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--text-tertiary);
+            transition: color 0.2s;
+            line-height: 1;
+        }
+
+        .modal-close:hover {
+            color: var(--text-primary);
+        }
+
+        .form-group {
+            margin-bottom: 14px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+        }
+
+        .form-input {
+            width: 100%;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 13px;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        /* ========== REST DAY SELECTOR ========== */
+        .rest-day-selector {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 6px;
+        }
+
+        .rest-day-option {
+            padding: 10px;
+            background: var(--bg-tertiary);
+            border: 2px solid var(--border);
+            border-radius: 5px;
+            text-align: center;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .rest-day-option:hover {
+            border-color: var(--accent);
+        }
+
+        .rest-day-option.selected {
+            background: var(--warning);
+            border-color: var(--warning);
+            color: var(--bg-primary);
+        }
+
+        /* ========== RESPONSIVE ========== */
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                top: 0;
+                left: 0;
+                height: 100vh;
+                z-index: 200;
+            }
+
+            .mobile-header {
+                display: flex;
+            }
+
+            .main-content {
+                padding: 14px;
+            }
+
+            .workout-grid {
+                grid-template-columns: 100px repeat(6, 1fr);
+                gap: 3px;
+                font-size: 10px;
+            }
+
+            .habits-grid {
+                grid-template-columns: 100px repeat(7, 1fr);
+                gap: 3px;
+            }
+
+            .custom-checkbox {
+                width: 22px;
+                height: 22px;
+            }
+
+            .small-checkbox {
+                width: 18px;
+                height: 18px;
+            }
+
+            .card {
+                padding: 14px;
+            }
+
+            .week-title {
+                font-size: 18px;
+            }
+
+            .timer-display {
+                font-size: 32px;
+            }
+
+            .comparison-container {
+                grid-template-columns: 1fr;
+            }
+
+            .tabs {
+                font-size: 11px;
+            }
+
+            .tab {
+                padding: 8px 12px;
+            }
+        }
+
+        /* ========== SCROLLBAR ========== */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-primary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--accent);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-primary);
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- SIDEBAR -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">Discipline Pro</div>
+                <div class="stats-mini">
+                    <div class="stat-mini">
+                        <div class="stat-mini-value" id="streakNumber">0</div>
+                        <div class="stat-mini-label">Streak</div>
+                    </div>
+                    <div class="stat-mini">
+                        <div class="stat-mini-value" id="longestStreak">0</div>
+                        <div class="stat-mini-label">Best</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="quick-stats">
+                <div class="quick-stats-title">Quick Stats</div>
+                <div class="quick-stat-item">
+                    <span class="quick-stat-label">This Month:</span>
+                    <span class="quick-stat-value" id="monthCompletion">0%</span>
+                </div>
+                <div class="quick-stat-item">
+                    <span class="quick-stat-label">All Time:</span>
+                    <span class="quick-stat-value" id="totalWorkouts">0</span>
+                </div>
+                <div class="quick-stat-item">
+                    <span class="quick-stat-label">This Year:</span>
+                    <span class="quick-stat-value" id="yearCompletion">0%</span>
+                </div>
+            </div>
+
+            <div class="weeks-list" id="weeksList"></div>
+            <button class="add-week-btn" onclick="addWeek()">+ New Week</button>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="main-content">
+            <div class="mobile-header">
+                <button class="menu-toggle" onclick="toggleSidebar()">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+                <div class="logo">Discipline Pro</div>
+            </div>
+
+            <div class="top-controls">
+                <h1 class="week-title" id="weekTitle">Week 1</h1>
+                <div class="controls-group">
+                    <button class="btn" onclick="openModal('renameModal')">Rename</button>
+                    <button class="btn" onclick="openModal('goalModal')">Set Goal</button>
+                    <button class="btn" onclick="openModal('restDayModal')">Rest Day</button>
+                    <button class="btn" onclick="deleteWeek()">Delete</button>
+                    <button class="btn" onclick="openModal('themeModal')">Themes</button>
+                    <button class="btn" onclick="openModal('settingsModal')">⚙️</button>
+                </div>
+            </div>
+
+            <!-- TABS -->
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('training')">Training</button>
+                <button class="tab" onclick="switchTab('habits')">Daily Habits</button>
+                <button class="tab" onclick="switchTab('notes')">Notes</button>
+                <button class="tab" onclick="switchTab('photos')">Photos</button>
+                <button class="tab" onclick="switchTab('stats')">Stats</button>
+                <button class="tab" onclick="switchTab('compare')">Compare</button>
+            </div>
+
+            <!-- TAB: TRAINING -->
+            <div class="tab-content active" id="tab-training">
+                <div class="card">
+                    <div class="mode-selector">
+                        <div class="mode-btn active" id="customModeBtn" onclick="setMode('custom')">
+                            <div class="mode-title">Custom</div>
+                            <div class="mode-desc">Build your own</div>
+                        </div>
+                        <div class="mode-btn" id="rotatingModeBtn" onclick="setMode('rotating')">
+                            <div class="mode-title">PPL Split</div>
+                            <div class="mode-desc">Auto-rotating</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card" id="customExercisesCard">
+                    <div class="card-header">
+                        <div class="card-title">Exercise Builder</div>
+                        <div>
+                            <button class="btn btn-small" onclick="openModal('templatesModal')">Templates</button>
+                            <button class="btn btn-small primary" onclick="addExercise()">+ Add</button>
+                        </div>
+                    </div>
+                    <div class="exercises-list" id="exercisesList"></div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Weekly Training</div>
+                    <div id="workoutGrid"></div>
+                    <div class="progress-section">
+                        <div class="progress-bar-container">
+                            <div class="progress-bar-fill" id="progressBar" style="width: 0%">
+                                <span class="progress-percentage" id="progressPercentage">0%</span>
+                            </div>
+                        </div>
+                        <div class="badges-container" id="badgesContainer"></div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Workout Timer</div>
+                    <div class="timer-display" id="timerDisplay">00:00:00</div>
+                    <div class="timer-controls">
+                        <button class="btn" onclick="startTimer()">Start</button>
+                        <button class="btn" onclick="stopTimer()">Stop</button>
+                        <button class="btn" onclick="resetTimer()">Reset</button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">90-Day Progress</div>
+                    <div class="chart-container">
+                        <canvas id="progressChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: HABITS -->
+            <div class="tab-content" id="tab-habits">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Daily Habits</div>
+                        <button class="btn btn-small primary" onclick="addHabit()">+ Add Habit</button>
+                    </div>
+                    <div id="habitsGrid"></div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Habit Stats</div>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-value" id="habitCompletionToday">0</div>
+                            <div class="stat-label">Today</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="habitCompletionWeek">0%</div>
+                            <div class="stat-label">This Week</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: NOTES -->
+            <div class="tab-content" id="tab-notes">
+                <div class="card">
+                    <div class="card-title">Week Notes & Reflections</div>
+                    <textarea class="notes-area" id="weekNotes" placeholder="Log how you felt, PRs, injuries, thoughts..."></textarea>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Measurements</div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+                        <div>
+                            <div class="form-label">Weight</div>
+                            <input type="text" class="form-input" id="measureWeight" placeholder="e.g., 180 lbs">
+                        </div>
+                        <div>
+                            <div class="form-label">Body Fat %</div>
+                            <input type="text" class="form-input" id="measureBF" placeholder="e.g., 15%">
+                        </div>
+                        <div>
+                            <div class="form-label">Custom 1</div>
+                            <input type="text" class="form-input" id="measureCustom1" placeholder="Your metric">
+                        </div>
+                        <div>
+                            <div class="form-label">Custom 2</div>
+                            <input type="text" class="form-input" id="measureCustom2" placeholder="Your metric">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: PHOTOS -->
+            <div class="tab-content" id="tab-photos">
+                <div class="card">
+                    <div class="card-title">Progress Photos</div>
+                    <div class="photo-grid">
+                        <div class="photo-upload" onclick="document.getElementById('frontPhoto').click()">
+                            <input type="file" id="frontPhoto" accept="image/*" onchange="uploadPhoto('front', this)">
+                            <img id="frontPreview" class="photo-preview" style="display: none;">
+                            <div class="photo-label">Front</div>
+                        </div>
+                        <div class="photo-upload" onclick="document.getElementById('sidePhoto').click()">
+                            <input type="file" id="sidePhoto" accept="image/*" onchange="uploadPhoto('side', this)">
+                            <img id="sidePreview" class="photo-preview" style="display: none;">
+                            <div class="photo-label">Side</div>
+                        </div>
+                        <div class="photo-upload" onclick="document.getElementById('backPhoto').click()">
+                            <input type="file" id="backPhoto" accept="image/*" onchange="uploadPhoto('back', this)">
+                            <img id="backPreview" class="photo-preview" style="display: none;">
+                            <div class="photo-label">Back</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: STATS -->
+            <div class="tab-content" id="tab-stats">
+                <div class="card">
+                    <div class="card-title">Overall Statistics</div>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-value" id="totalWorkoutsStat">0</div>
+                            <div class="stat-label">Total Workouts</div>
+                            <div class="stat-sublabel">All time</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="currentStreakStat">0</div>
+                            <div class="stat-label">Current Streak</div>
+                            <div class="stat-sublabel">Weeks</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="bestStreakStat">0</div>
+                            <div class="stat-label">Longest Streak</div>
+                            <div class="stat-sublabel">Weeks</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="perfectWeeksStat">0</div>
+                            <div class="stat-label">Perfect Weeks</div>
+                            <div class="stat-sublabel">100% completion</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="monthCompletionStat">0%</div>
+                            <div class="stat-label">This Month</div>
+                            <div class="stat-sublabel">Completion rate</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="yearCompletionStat">0%</div>
+                            <div class="stat-label">This Year</div>
+                            <div class="stat-sublabel">Completion rate</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Achievements</div>
+                    <div class="milestones-grid" id="milestonesGrid"></div>
+                </div>
+            </div>
+
+            <!-- TAB: COMPARE -->
+            <div class="tab-content" id="tab-compare">
+                <div class="card">
+                    <div class="card-title">Week Comparison</div>
+                    <div class="form-group">
+                        <div class="form-label">Compare With</div>
+                        <select class="form-input" id="compareWeekSelect" onchange="renderComparison()">
+                            <option value="">Select a week...</option>
+                        </select>
+                    </div>
+                    <div id="comparisonContent"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- MODALS -->
+    <div class="modal" id="renameModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                Rename Week
+                <span class="modal-close" onclick="closeModal('renameModal')">&times;</span>
+            </div>
+            <input type="text" class="form-input" id="renameInput" placeholder="Enter new name">
+            <button class="btn primary" onclick="renameWeek()" style="width: 100%; margin-top: 12px;">Save</button>
+        </div>
+    </div>
+
+    <div class="modal" id="goalModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                Set Weekly Goal
+                <span class="modal-close" onclick="closeModal('goalModal')">&times;</span>
+            </div>
+            <div class="form-group">
+                <div class="form-label">Target Completion %</div>
+                <input type="number" class="form-input" id="goalInput" placeholder="e.g., 90" min="0" max="100">
+            </div>
+            <button class="btn primary" onclick="setGoal()" style="width: 100%;">Save Goal</button>
+        </div>
+    </div>
+
+    <div class="modal" id="restDayModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                Select Rest Day
+                <span class="modal-close" onclick="closeModal('restDayModal')">&times;</span>
+            </div>
+            <div class="rest-day-selector" id="restDaySelector"></div>
+            <button class="btn primary" onclick="closeModal('restDayModal')" style="width: 100%; margin-top: 12px;">Done</button>
+        </div>
+    </div>
+
+    <div class="modal" id="templatesModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                Workout Templates
+                <span class="modal-close" onclick="closeModal('templatesModal')">&times;</span>
+            </div>
+            <div class="templates-grid" id="templatesGrid"></div>
+            <div style="margin-top: 16px;">
+                <button class="btn btn-small" onclick="saveAsTemplate()">💾 Save Current as Template</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="themeModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                Choose Theme
+                <span class="modal-close" onclick="closeModal('themeModal')">&times;</span>
+            </div>
+            <div class="theme-grid" id="themeGrid"></div>
+        </div>
+    </div>
+
+    <div class="modal" id="settingsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                Settings
+                <span class="modal-close" onclick="closeModal('settingsModal')">&times;</span>
+            </div>
+            <div class="form-group">
+                <label style="display: flex; align-items: center; gap: 12px; cursor: pointer;">
+                    <input type="checkbox" id="soundToggle" onchange="toggleSound()" style="width: 18px; height: 18px;">
+                    <span>Enable sound effects</span>
+                </label>
+            </div>
+            <button class="btn" onclick="exportData()" style="width: 100%; margin-bottom: 8px;">📥 Export Data</button>
+            <button class="btn" onclick="document.getElementById('importFile').click()" style="width: 100%;">📤 Import Data</button>
+            <input type="file" id="importFile" accept=".json" onchange="importData(this)" style="display: none;">
+        </div>
+    </div>
+
+    <script>
+        // ========== STATE ==========
+        let state = {
+            weeks: [],
+            currentWeekIndex: 0,
+            streak: 0,
+            longestStreak: 0,
+            soundEnabled: true,
+            currentTheme: 'blackGold',
+            weekHistory: [],
+            templates: [],
+            globalStats: {
+                totalWorkouts: 0,
+                perfectWeeks: 0
+            }
+        };
+
+        // ========== THEMES ==========
+        const themes = {
+            blackGold: { name: 'Black & Gold', vars: { '--bg-primary': '#0a0a0a', '--bg-secondary': '#151515', '--bg-tertiary': '#1f1f1f', '--accent': '#d4af37', '--accent-dim': '#8b7424', '--text-primary': '#ffffff', '--text-secondary': '#a0a0a0', '--text-tertiary': '#606060', '--border': 'rgba(212, 175, 55, 0.2)' }},
+            blackRed: { name: 'Black & Red', vars: { '--bg-primary': '#0f0f0f', '--bg-secondary': '#1a1a1a', '--bg-tertiary': '#252525', '--accent': '#dc2626', '--accent-dim': '#991b1b', '--text-primary': '#ffffff', '--text-secondary': '#a0a0a0', '--text-tertiary': '#606060', '--border': 'rgba(220, 38, 38, 0.2)' }},
+            cyanDark: { name: 'Cyber Blue', vars: { '--bg-primary': '#0c1821', '--bg-secondary': '#1b2838', '--bg-tertiary': '#253447', '--accent': '#00d4ff', '--accent-dim': '#0088cc', '--text-primary': '#e0f2ff', '--text-secondary': '#94b8d4', '--text-tertiary': '#5a7890', '--border': 'rgba(0, 212, 255, 0.2)' }},
+            emerald: { name: 'Emerald', vars: { '--bg-primary': '#0a1f14', '--bg-secondary': '#0f2e1f', '--bg-tertiary': '#16402b', '--accent': '#10b981', '--accent-dim': '#059669', '--text-primary': '#ecfdf5', '--text-secondary': '#a7f3d0', '--text-tertiary': '#6ee7b7', '--border': 'rgba(16, 185, 129, 0.2)' }},
+            purpleNeon: { name: 'Purple Neon', vars: { '--bg-primary': '#0f0518', '--bg-secondary': '#1a0b2e', '--bg-tertiary': '#2d1b4e', '--accent': '#a855f7', '--accent-dim': '#7e22ce', '--text-primary': '#faf5ff', '--text-secondary': '#d8b4fe', '--text-tertiary': '#a78bfa', '--border': 'rgba(168, 85, 247, 0.3)' }},
+            minimalLight: { name: 'Minimal Light', vars: { '--bg-primary': '#ffffff', '--bg-secondary': '#f8f8f8', '--bg-tertiary': '#eeeeee', '--accent': '#000000', '--accent-dim': '#333333', '--text-primary': '#000000', '--text-secondary': '#666666', '--text-tertiary': '#999999', '--border': 'rgba(0, 0, 0, 0.1)' }},
+            matrix: { name: 'Matrix', vars: { '--bg-primary': '#000000', '--bg-secondary': '#0d0d0d', '--bg-tertiary': '#1a1a1a', '--accent': '#00ff41', '--accent-dim': '#00cc33', '--text-primary': '#00ff41', '--text-secondary': '#00cc33', '--text-tertiary': '#008f2d', '--border': 'rgba(0, 255, 65, 0.2)' }},
+            roseGold: { name: 'Rose Gold', vars: { '--bg-primary': '#1a1214', '--bg-secondary': '#2a1f23', '--bg-tertiary': '#3d2d33', '--accent': '#f9a8d4', '--accent-dim': '#ec4899', '--text-primary': '#fdf2f8', '--text-secondary': '#fbcfe8', '--text-tertiary': '#f9a8d4', '--border': 'rgba(249, 168, 212, 0.2)' }},
+            royalBlue: { name: 'Royal Blue', vars: { '--bg-primary': '#0a1628', '--bg-secondary': '#152340', '--bg-tertiary': '#1e3154', '--accent': '#3b82f6', '--accent-dim': '#1d4ed8', '--text-primary': '#dbeafe', '--text-secondary': '#93c5fd', '--text-tertiary': '#60a5fa', '--border': 'rgba(59, 130, 246, 0.2)' }},
+            gunmetal: { name: 'Gunmetal', vars: { '--bg-primary': '#1c1c1e', '--bg-secondary': '#2c2c2e', '--bg-tertiary': '#3a3a3c', '--accent': '#8e8e93', '--accent-dim': '#636366', '--text-primary': '#ffffff', '--text-secondary': '#aeaeb2', '--text-tertiary': '#8e8e93', '--border': 'rgba(142, 142, 147, 0.2)' }},
+            sunset: { name: 'Sunset', vars: { '--bg-primary': '#1f1206', '--bg-secondary': '#2d1b0f', '--bg-tertiary': '#3d2817', '--accent': '#fb923c', '--accent-dim': '#ea580c', '--text-primary': '#fff7ed', '--text-secondary': '#fed7aa', '--text-tertiary': '#fdba74', '--border': 'rgba(251, 146, 60, 0.2)' }},
+            ocean: { name: 'Ocean', vars: { '--bg-primary': '#082f49', '--bg-secondary': '#0c4a6e', '--bg-tertiary': '#075985', '--accent': '#38bdf8', '--accent-dim': '#0ea5e9', '--text-primary': '#f0f9ff', '--text-secondary': '#bae6fd', '--text-tertiary': '#7dd3fc', '--border': 'rgba(56, 189, 248, 0.2)' }},
+            forest: { name: 'Forest', vars: { '--bg-primary': '#14120b', '--bg-secondary': '#1f1d14', '--bg-tertiary': '#2a271d', '--accent': '#84cc16', '--accent-dim': '#65a30d', '--text-primary': '#f7fee7', '--text-secondary': '#d9f99d', '--text-tertiary': '#bef264', '--border': 'rgba(132, 204, 22, 0.2)' }},
+            crimson: { name: 'Crimson', vars: { '--bg-primary': '#1a0a0f', '--bg-secondary': '#2d1319', '--bg-tertiary': '#3f1c24', '--accent': '#f43f5e', '--accent-dim': '#e11d48', '--text-primary': '#fff1f2', '--text-secondary': '#fecdd3', '--text-tertiary': '#fda4af', '--border': 'rgba(244, 63, 94, 0.2)' }},
+            arctic: { name: 'Arctic', vars: { '--bg-primary': '#e0f2fe', '--bg-secondary': '#f0f9ff', '--bg-tertiary': '#ffffff', '--accent': '#0369a1', '--accent-dim': '#075985', '--text-primary': '#0c4a6e', '--text-secondary': '#075985', '--text-tertiary': '#0369a1', '--border': 'rgba(3, 105, 161, 0.2)' }},
+            midnight: { name: 'Midnight', vars: { '--bg-primary': '#020617', '--bg-secondary': '#0f172a', '--bg-tertiary': '#1e293b', '--accent': '#818cf8', '--accent-dim': '#6366f1', '--text-primary': '#f1f5f9', '--text-secondary': '#cbd5e1', '--text-tertiary': '#94a3b8', '--border': 'rgba(129, 140, 248, 0.2)' }}
+        };
+
+        // ========== ROTATING PROGRAM ========== 
+        const rotatingProgram = {
+            push: ['Bench Press', 'Overhead Press', 'Incline DB Press', 'Lateral Raises', 'Tricep Dips', 'Cable Flyes'],
+            pull: ['Deadlift', 'Pull-ups', 'Barbell Rows', 'Face Pulls', 'Barbell Curls', 'Hammer Curls'],
+            legs: ['Squats', 'RDL', 'Leg Press', 'Leg Curls', 'Calf Raises', 'Bulgarian Splits']
+        };
+
+        // ========== MILESTONES ==========
+        const milestones = [
+            { id: 'week1', icon: '🎯', title: 'First Week', desc: 'Complete 1 week', threshold: 1 },
+            { id: 'week10', icon: '🔥', title: 'Dedicated', desc: '10 weeks', threshold: 10 },
+            { id: 'week20', icon: '💪', title: 'Committed', desc: '20 weeks', threshold: 20 },
+            { id: 'week50', icon: '👑', title: 'Elite', desc: '50 weeks', threshold: 50 },
+            { id: 'week100', icon: '🏆', title: 'Legend', desc: '100 weeks', threshold: 100 },
+            { id: 'streak7', icon: '⚡', title: '7-Day Streak', desc: '7 days consistent', threshold: 7, type: 'streak' },
+            { id: 'streak30', icon: '🌟', title: 'Month Strong', desc: '30 days', threshold: 30, type: 'streak' },
+            { id: 'streak100', icon: '💎', title: 'Unstoppable', desc: '100 days', threshold: 100, type: 'streak' },
+            { id: 'perfect10', icon: '✨', title: 'Perfectionist', desc: '10 perfect weeks', threshold: 10, type: 'perfect' },
+            { id: 'perfect25', icon: '🌈', title: 'Master', desc: '25 perfect weeks', threshold: 25, type: 'perfect' }
+        ];
+
+        // ========== TIMER ==========
+        let timerInterval = null;
+        let timerSeconds = 0;
+
+        // ========== INIT ==========
+        function init() {
+            loadState();
+            renderThemeGrid();
+            applyTheme(state.currentTheme);
+            if (state.weeks.length === 0) {
+                addWeek();
+            }
+            renderWeeksList();
+            renderCurrentWeek();
+            updateAllStats();
+            renderChart();
+            renderMilestones();
+            document.getElementById('soundToggle').checked = state.soundEnabled;
+        }
+
+        function loadState() {
+            try {
+                const saved = localStorage.getItem('disciplineTrackerPro');
+                if (saved) {
+                    state = JSON.parse(saved);
+                }
+            } catch (e) {
+                console.warn('localStorage not available:', e);
+            }
+        }
+
+        function saveState() {
+            try {
+                localStorage.setItem('disciplineTrackerPro', JSON.stringify(state));
+            } catch (e) {
+                console.warn('Cannot save:', e);
+            }
+        }
+
+        // ========== WEEKS ==========
+        function addWeek() {
+            const weekNumber = state.weeks.length + 1;
+            const newWeek = {
+                id: Date.now(),
+                name: `Week ${weekNumber}`,
+                mode: 'custom',
+                exercises: [],
+                tracking: {},
+                habits: [],
+                habitTracking: {},
+                photos: {},
+                notes: '',
+                measurements: {},
+                completionPercentage: 0,
+                goal: null,
+                restDay: null,
+                createdDate: new Date().toISOString()
+            };
+            state.weeks.push(newWeek);
+            state.currentWeekIndex = state.weeks.length - 1;
+            saveState();
+            renderWeeksList();
+            renderCurrentWeek();
+        }
+
+        function deleteWeek() {
+            if (state.weeks.length === 1) {
+                alert('Cannot delete the last week');
+                return;
+            }
+            if (confirm('Delete this week?')) {
+                state.weeks.splice(state.currentWeekIndex, 1);
+                state.currentWeekIndex = Math.max(0, state.currentWeekIndex - 1);
+                saveState();
+                renderWeeksList();
+                renderCurrentWeek();
+                updateAllStats();
+            }
+        }
+
+        function switchWeek(index) {
+            saveCurrentWeekData();
+            state.currentWeekIndex = index;
+            saveState();
+            renderWeeksList();
+            renderCurrentWeek();
+        }
+
+        function renameWeek() {
+            const newName = document.getElementById('renameInput').value.trim();
+            if (newName) {
+                state.weeks[state.currentWeekIndex].name = newName;
+                saveState();
+                renderWeeksList();
+                renderCurrentWeek();
+                closeModal('renameModal');
+            }
+        }
+
+        function renderWeeksList() {
+            const container = document.getElementById('weeksList');
+            container.innerHTML = state.weeks.map((week, index) => `
+                <div class="week-item ${index === state.currentWeekIndex ? 'active' : ''}" onclick="switchWeek(${index})">
+                    <span class="week-name">${week.name}</span>
+                    <span class="week-progress">${week.completionPercentage}%</span>
+                </div>
+            `).join('');
+        }
+
+        function saveCurrentWeekData() {
+            const currentWeek = state.weeks[state.currentWeekIndex];
+            currentWeek.notes = document.getElementById('weekNotes').value;
+            currentWeek.measurements = {
+                weight: document.getElementById('measureWeight').value,
+                bodyFat: document.getElementById('measureBF').value,
+                custom1: document.getElementById('measureCustom1').value,
+                custom2: document.getElementById('measureCustom2').value
+            };
+            saveState();
+        }
+
+        // ========== MODE ==========
+        function setMode(mode) {
+            const currentWeek = state.weeks[state.currentWeekIndex];
+            currentWeek.mode = mode;
+            
+            if (mode === 'rotating') {
+                const weekIndex = state.currentWeekIndex % 3;
+                const splits = ['push', 'pull', 'legs'];
+                currentWeek.exercises = rotatingProgram[splits[weekIndex]];
+            }
+            
+            saveState();
+            renderCurrentWeek();
+        }
+
+        // ========== EXERCISES ==========
+        function addExercise() {
+            const currentWeek = state.weeks[state.currentWeekIndex];
+            if (currentWeek.exercises.length >= 12) {
+                alert('Maximum 12 exercises per week');
+                return;
+            }
+            currentWeek.exercises.push('');
+            saveState();
+            renderExercisesList();
+        }
+
+        function updateExercise(index, value) {
+            state.weeks[state.currentWeekIndex].exercises[index] = value;
+            saveState();
+            renderWorkoutGrid();
+        }
+
+        function removeExercise(index) {
+            state.weeks[state.currentWeekIndex].exercises.splice(index, 1);
+            saveState();
+            renderExercisesList();
+            renderWorkoutGrid();
+        }
+
+        function renderExercisesList() {
+            const currentWeek = state.weeks[state.currentWeekIndex];
+            const container = document.getElementById('exercisesList');
+            container.innerHTML = currentWeek.exercises.map((exercise, index) => `
+                <div class="exercise-item">
+                    <input type="text" class="exercise-input" value="${exercise}" 
+                        onchange="updateExercise(${index}, this.value)" 
+                        placeholder="Exercise name">
+                    <button class="remove-btn" onclick="removeExercise(${index})">×</button>
+                </div>
+            `).join('');
+        }
+
+        // ========== WORKOUT TRACKING ==========
+        function renderWorkoutGrid() {
+            const currentWeek = state.weeks[state.currentWeekIndex];
+            const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            const restDay = currentWeek.restDay;
+            
+            let html = '<div class="workout-grid">';
+            html += '<div class="grid-header">Exercise</div>';
+            days.forEach((day, idx) => {
+                const isRest = restDay === idx;
+                html += `<div class="grid-header ${isRest ? 'rest-day' : ''}">${day}${isRest ? ' (R)' : ''}</div>`;
+            });
+            
+            currentWeek.exercises.forEach((exercise, exIndex) => {
+                html += `<div class="exercise-label">${exercise || 'Unnamed'}</div>`;
+                days.forEach((day, dayIndex) => {
+                    const key = `${exIndex}-${dayIndex}`;
+                    const checked = currentWeek.tracking[key] || false;
+                    const isRest = restDay === dayIndex;
+                    html += `
+                        <div class="checkbox-cell ${isRest ? 'rest-day' : ''}">
+                            <div class="custom-checkbox ${checked ? 'checked' : ''}" 
+                                onclick="${!isRest ? `toggleCheckbox(${exIndex}, ${dayIndex})` : ''}"></div>
+                        </div>
+                    `;
+                });
+            });
+            
+            html += '</div>';
+            document.getElementById('workoutGrid').innerHTML = html;
+            updateProgress();
+        }
+
+        function toggleCheckbox(exIndex, dayIndex) {
+            const currentWeek = state.weeks[state.currentWeekIndex];
+            const key = `${exIndex}-${dayIndex}`;
+            currentWeek.tracking[key] = !currentWeek.tracking[key];
+            
+            if (state.soundEnabled) {
+                playClickSound();
+            }
+            
+            saveState();
+            renderWorkoutGrid();
+        }
+
+        function updateProgress() {
+            const currentWeek = state.weeks[state.currentWeekIndex];
+            const restDay = currentWeek.restDay;
+            const activeDays = restDay !== null ? 5 : 6;
+            const totalCheckboxes = currentWeek.exercises.length * activeDays;
+            
+            if (totalCheckboxes === 0) {
+                currentWeek.completionPercentage = 0;
+            } else {
+                let checkedCount = 0;
+                Object.keys(currentWeek.tracking).forEach(key => {
+                    const [exIndex, dayIndex] = key.split('-').map(Number);
+                    if (currentWeek.tracking[key] && dayIndex !== restDay) {
+                        checkedCount++;
+                    }
+                });
+                currentWeek.completionPercentage = Math.round((checkedCount / totalCheckboxes) * 100);
+            }
+            
+            const bar = document.getElementById('progressBar');
+            const percentage = document.getElementById('progressPercentage');
+            const badgesContainer = document.getElementById('badgesContainer');
+            
+            bar.style.width = currentWeek.completionPercentage + '%';
+            percentage.textContent = currentWeek.completionPercentage + '%';
+            
+            let badges = '';
+            
+            if (currentWeek.completionPercentage === 100) {
+                badges += '<div class="badge perfect">🏆 PERFECT WEEK</div>';
+                updateWeekHistory();
+            }
+            
+            if (currentWeek.goal) {
+                if (currentWeek.completionPercentage >= currentWeek.goal) {
+                    badges += '<div class="badge goal-met">✓ Goal Met</div>';
+                } else {
+                    const remaining = currentWeek.goal - currentWeek.completionPercentage;
+                    badges += `<div class="badge behind">📊 ${remaining}% to goal</div>`;
+                }
+            }
+            
+            badgesContainer.innerHTML = badges;
+            
+            saveState();
+            renderWeeksList();
+            renderChart();
+            updateAllStats();
+        }
+
+        function updateWeekHistory() {
+            const currentWeek = state.weeks[state.currentWeekIndex];
+            const weekId = currentWeek.id;
+            
+            if (!state.weekHistory) {
+                state.weekHistory = [];
+            }
+            
+            const existingIndex = state.weekHistory.findIndex(w => w.weekId === weekId);
+            if (existingIndex === -1 && currentWeek.completionPercentage === 100) {
+                state.weekHistory.push({
+                    weekId: weekId,
+                    completedDate: new Date().toISOString(),
+                    percentage: 100
+                });
+                state.globalStats.perfectWeeks = (state.globalStats.perfectWeeks || 0) + 1;
+            }
+            
+            updateStreak();
+            saveState();
+        }
+
+        function updateStreak() {
+            const completedWeeks = state.weekHistory || [];
+            completedWeeks.sort((a, b) => new Date(a.completedDate) - new Date(b.completedDate));
+            
+            let streak = 0;
+            const today = new Date();
+            
+            for (let i = completedWeeks.length - 1; i >= 0; i--) {
+                const weekDate = new Date(completedWeeks[i].completedDate);
+                const daysDiff = Math.floor((today - weekDate) / (1000 * 60 * 60 * 24));
+                
+                if (daysDiff <= 7 * (streak + 1)) {
+                    streak++;
+                } else {
+                    break;
+                }
+            }
+            
+            state.streak = streak;
+            state.longestStreak = Math.max(state.longestStreak || 0, streak);
+            
+            document.getElementById('streakNumber').textContent = state.streak;
+            document.getElementById('longestStreak').textContent = state.longestStreak;
+            saveState();
+        }
+
+        // ========== HABITS ==========
+        function addHabit() {
+            const currentWeek = state.weeks[state.currentWeekIndex];
+            if (!currentWeek.habits) currentWeek.habits = [];
+            if (currentWeek.habits.length >= 10) {
+                alert('Maximum 10 habits per week');
+                return;
+            }
+            currentWeek.habits.push('');
+            saveState();
+            renderHabitsGrid();
+        }
+
+        function updateHabit(index, value) {
+            state.weeks[state.currentWeekIndex].habits[index] = value;
+            saveState();
+            renderHabitsGrid();
+        }
+
+        function removeHabit(index) {
+            state.weeks[state.currentWeekIndex].habits.splice(index, 1);
+            saveState();
+            renderHabitsGrid();
+        }
+
+        function toggleHabit(habitIndex, dayIndex) {
+            const currentWeek = state.weeks[state.currentWeekIndex];
+            if (!currentWeek.habitTracking) currentWeek.habitTracking = {};
+            const key = `${habitIndex}-${dayIndex}`;
+            currentWeek.habitTracking[key] = !currentWeek.habitTracking[key];
+            
+            if (state.soundEnabled) {
+                playClickSound();
+            }
+            
+            saveState();
+            renderHabitsGrid();
+            updateHabitStats();
+        }
+
+        function renderHabitsGrid() {
+            const currentWeek = state.weeks[state.currentWeekIndex];
+            if (!currentWeek.habits) currentWeek.habits = [];
+            if (!currentWeek.habitTracking) currentWeek.habitTracking = {};
+            
+            const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+            
+            let html = '<div class="habits-grid">';
+            html += '<div class="grid-header">Habit</div>';
+            days.forEach(day => {
+                html += `<div class="grid-header">${day}</div>`;
+            });
+            
+            currentWeek.habits.forEach((habit, habitIndex) => {
+                html += `
+                    <div class="habit-item">
+                        <input type="text" class="habit-input" value="${habit}" 
+                            onchange="updateHabit(${habitIndex}, this.value)" 
+                            placeholder="Habit name">
+                        <button class="remove-btn" onclick="removeHabit(${habitIndex})">×</button>
+                    </div>
+                `;
+                days.forEach((day, dayIndex) => {
+                    const key = `${habitIndex}-${dayIndex}`;
+                    const checked = currentWeek.habitTracking[key] || false;
+                    html += `
+                        <div class="checkbox-cell">
+                            <div class="small-checkbox ${checked ? 'checked' : ''}" 
+                                onclick="toggleHabit(${habitIndex}, ${dayIndex})"></div>
+                        </div>
+                    `;
+                });
+            });
+            
+            html += '</div>';
+            document.getElementById('habitsGrid').innerHTML = html;
+            updateHabitStats();
+        }
+
+        function updateHabitStats() {
+            const currentWeek = state.weeks[state.currentWeekIndex];
+            if (!currentWeek.habits || currentWeek.habits.length === 0) {
+                document.getElementById('habitCompletionToday').textContent = '0';
+                document.getElementById('habitCompletionWeek').textContent = '0%';
+                return;
+            }
+            
+            // Today (assume today is last tracked day)
+            const today = 6; // Sunday
+            let todayCompleted = 0;
+            currentWeek.habits.forEach((habit, idx) => {
+                if (currentWeek.habitTracking[`${idx}-${today}`]) {
+                    todayCompleted++;
+                }
+            });
+            document.getElementById('habitCompletionToday').textContent = todayCompleted;
+            
+            // Week total
+            const totalHabitChecks = currentWeek.habits.length * 7;
+            const completedChecks = Object.values(currentWeek.habitTracking).filter(v => v).length;
+            const weekPercentage = Math.round((completedChecks / totalHabitChecks) * 100);
+            document.getElementById('habitCompletionWeek').textContent = weekPercentage + '%';
+        }
+
+        // ========== CURRENT WEEK RENDER ==========
+        function renderCurrentWeek() {
+            const currentWeek = state.weeks[state.currentWeekIndex];
+            document.getElementById('weekTitle').textContent = currentWeek.name;
+            document.getElementById('renameInput').value = currentWeek.name;
+            
+            // Mode
+            document.getElementById('customModeBtn').classList.toggle('active', currentWeek.mode === 'custom');
+            document.getElementById('rotatingModeBtn').classList.toggle('active', currentWeek.mode === 'rotating');
+            document.getElementById('customExercisesCard').style.display = currentWeek.mode === 'custom' ? 'block' : 'none';
+            
+            // Notes
+            document.getElementById('weekNotes').value = currentWeek.notes || '';
+            
+            // Measurements
+            document.getElementById('measureWeight').value = currentWeek.measurements?.weight || '';
+            document.getElementById('measureBF').value = currentWeek.measurements?.bodyFat || '';
+            document.getElementById('measureCustom1').value = currentWeek.measurements?.custom1 || '';
+            document.getElementById('measureCustom2').value = currentWeek.measurements?.custom2 || '';
+            
+            // Goal
+            document.getElementById('goalInput').value = currentWeek.goal || '';
+            
+            renderExercisesList();
+            renderWorkoutGrid();
+            renderHabitsGrid();
+            renderPhotos();
+            renderRestDaySelector();
+            renderCompareWeekSelect();
+        }
+
+        // ========== REST DAY ==========
+        function renderRestDaySelector() {
+            const currentWeek = state.weeks[state.currentWeekIndex];
+            const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            const html = days.map((day, idx) => `
+                <div class="rest-day-option ${currentWeek.restDay === idx ? 'selected' : ''}" 
+                    onclick="setRestDay(${idx})">
+                    ${day}
+                </div>
+            `).join('');
+            document.getElementById('restDaySelector').innerHTML = html;
+        }
+
+        function setRestDay(dayIndex) {
+            const currentWeek = state.weeks[state.currentWeekIndex];
+            currentWeek.restDay = currentWeek.restDay === dayIndex ? null : dayIndex;
+            saveState();
+            renderRestDaySelector();
+            renderWorkoutGrid();
+        }
+
+        // ========== GOAL ==========
+        function setGoal() {
+            const goal = parseInt(document.getElementById('goalInput').value);
+            if (goal >= 0 && goal <= 100) {
+                state.weeks[state.currentWeekIndex].goal = goal;
+                saveState();
+                updateProgress();
+                closeModal('goalModal');
+            } else {
+                alert('Please enter a value between 0 and 100');
+            }
+        }
+
+        // ========== PHOTOS ==========
+        function uploadPhoto(type, input) {
+            const file = input.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const maxSize = 800;
+                    let width = img.width;
+                    let height = img.height;
+                    
+                    if (width > height && width > maxSize) {
+                        height *= maxSize / width;
+                        width = maxSize;
+                    } else if (height > maxSize) {
+                        width *= maxSize / height;
+                        height = maxSize;
+                    }
+                    
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    
+                    const compressed = canvas.toDataURL('image/jpeg', 0.8);
+                    if (!state.weeks[state.currentWeekIndex].photos) {
+                        state.weeks[state.currentWeekIndex].photos = {};
+                    }
+                    state.weeks[state.currentWeekIndex].photos[type] = compressed;
+                    saveState();
+                    renderPhotos();
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function renderPhotos() {
+            const currentWeek = state.weeks[state.currentWeekIndex];
+            ['front', 'side', 'back'].forEach(type => {
+                const preview = document.getElementById(type + 'Preview');
+                if (currentWeek.photos && currentWeek.photos[type]) {
+                    preview.src = currentWeek.photos[type];
+                    preview.style.display = 'block';
+                } else {
+                    preview.style.display = 'none';
+                }
+            });
+        }
+
+        // ========== TEMPLATES ==========
+        function saveAsTemplate() {
+            const currentWeek = state.weeks[state.currentWeekIndex];
+            const name = prompt('Template name:', currentWeek.name);
+            if (!name) return;
+            
+            if (!state.templates) state.templates = [];
+            state.templates.push({
+                id: Date.now(),
+                name: name,
+                exercises: [...currentWeek.exercises]
+            });
+            saveState();
+            renderTemplates();
+            alert('Template saved!');
+        }
+
+        function loadTemplate(templateId) {
+            const template = state.templates.find(t => t.id === templateId);
+            if (!template) return;
+            
+            state.weeks[state.currentWeekIndex].exercises = [...template.exercises];
+            saveState();
+            renderCurrentWeek();
+            closeModal('templatesModal');
+        }
+
+        function deleteTemplate(templateId) {
+            if (confirm('Delete this template?')) {
+                state.templates = state.templates.filter(t => t.id !== templateId);
+                saveState();
+                renderTemplates();
+            }
+        }
+
+        function renderTemplates() {
+            if (!state.templates) state.templates = [];
+            
+            const builtIn = [
+                { name: 'Push Day', exercises: rotatingProgram.push },
+                { name: 'Pull Day', exercises: rotatingProgram.pull },
+                { name: 'Leg Day', exercises: rotatingProgram.legs }
+            ];
+            
+            const html = [...builtIn, ...state.templates].map((template, idx) => `
+                <div class="template-item">
+                    <div class="template-info">
+                        <div class="template-name">${template.name}</div>
+                        <div class="template-exercises">${template.exercises.length} exercises</div>
+                    </div>
+                    <div class="template-actions">
+                        <button class="btn btn-small primary" onclick="loadTemplate(${template.id || `'builtin-${idx}'`})">Load</button>
+                        ${template.id ? `<button class="btn btn-small remove-btn" onclick="deleteTemplate(${template.id})">×</button>` : ''}
+                    </div>
+                </div>
+            `).join('');
+            
+            document.getElementById('templatesGrid').innerHTML = html;
+        }
+
+        // Fix built-in template loading
+        window.loadTemplate = function(templateId) {
+            if (typeof templateId === 'string' && templateId.startsWith('builtin-')) {
+                const idx = parseInt(templateId.split('-')[1]);
+                const builtIn = [
+                    { name: 'Push Day', exercises: rotatingProgram.push },
+                    { name: 'Pull Day', exercises: rotatingProgram.pull },
+                    { name: 'Leg Day', exercises: rotatingProgram.legs }
+                ];
+                state.weeks[state.currentWeekIndex].exercises = [...builtIn[idx].exercises];
+            } else {
+                const template = state.templates.find(t => t.id === templateId);
+                if (template) {
+                    state.weeks[state.currentWeekIndex].exercises = [...template.exercises];
+                }
+            }
+            saveState();
+            renderCurrentWeek();
+            closeModal('templatesModal');
+        };
+
+        // ========== STATS ==========
+        function updateAllStats() {
+            // Calculate total workouts
+            let totalWorkouts = 0;
+            state.weeks.forEach(week => {
+                totalWorkouts += Object.values(week.tracking).filter(v => v).length;
+            });
+            state.globalStats.totalWorkouts = totalWorkouts;
+            
+            // Month completion
+            const now = new Date();
+            const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+            const monthWeeks = state.weeks.filter(w => new Date(w.createdDate) >= monthStart);
+            const monthAvg = monthWeeks.length > 0 
+                ? Math.round(monthWeeks.reduce((sum, w) => sum + w.completionPercentage, 0) / monthWeeks.length)
+                : 0;
+            
+            // Year completion
+            const yearStart = new Date(now.getFullYear(), 0, 1);
+            const yearWeeks = state.weeks.filter(w => new Date(w.createdDate) >= yearStart);
+            const yearAvg = yearWeeks.length > 0
+                ? Math.round(yearWeeks.reduce((sum, w) => sum + w.completionPercentage, 0) / yearWeeks.length)
+                : 0;
+            
+            // Update sidebar
+            document.getElementById('monthCompletion').textContent = monthAvg + '%';
+            document.getElementById('totalWorkouts').textContent = totalWorkouts;
+            document.getElementById('yearCompletion').textContent = yearAvg + '%';
+            
+            // Update stats tab
+            document.getElementById('totalWorkoutsStat').textContent = totalWorkouts;
+            document.getElementById('currentStreakStat').textContent = state.streak;
+            document.getElementById('bestStreakStat').textContent = state.longestStreak || 0;
+            document.getElementById('perfectWeeksStat').textContent = state.globalStats.perfectWeeks || 0;
+            document.getElementById('monthCompletionStat').textContent = monthAvg + '%';
+            document.getElementById('yearCompletionStat').textContent = yearAvg + '%';
+            
+            saveState();
+        }
+
+        // ========== MILESTONES ==========
+        function renderMilestones() {
+            const totalWeeks = state.weeks.length;
+            const perfectWeeks = state.globalStats.perfectWeeks || 0;
+            const streak = state.streak;
+            
+            const html = milestones.map(m => {
+                let unlocked = false;
+                if (m.type === 'streak') {
+                    unlocked = streak >= m.threshold;
+                } else if (m.type === 'perfect') {
+                    unlocked = perfectWeeks >= m.threshold;
+                } else {
+                    unlocked = totalWeeks >= m.threshold;
+                }
+                
+                return `
+                    <div class="milestone ${unlocked ? 'unlocked' : 'locked'}">
+                        <div class="milestone-icon">${m.icon}</div>
+                        <div class="milestone-title">${m.title}</div>
+                        <div class="milestone-desc">${m.desc}</div>
+                    </div>
+                `;
+            }).join('');
+            
+            document.getElementById('milestonesGrid').innerHTML = html;
+        }
+
+        // ========== COMPARISON ==========
+        function renderCompareWeekSelect() {
+            const select = document.getElementById('compareWeekSelect');
+            const options = state.weeks.map((week, idx) => {
+                if (idx === state.currentWeekIndex) return '';
+                return `<option value="${idx}">${week.name}</option>`;
+            }).join('');
+            select.innerHTML = '<option value="">Select a week...</option>' + options;
+        }
+
+        function renderComparison() {
+            const compareIndex = parseInt(document.getElementById('compareWeekSelect').value);
+            if (isNaN(compareIndex)) {
+                document.getElementById('comparisonContent').innerHTML = '';
+                return;
+            }
+            
+            const currentWeek = state.weeks[state.currentWeekIndex];
+            const compareWeek = state.weeks[compareIndex];
+            
+            const html = `
+                <div class="comparison-container">
+                    <div class="comparison-week">
+                        <div class="comparison-title">${currentWeek.name}</div>
+                        <div class="comparison-stat">
+                            <span>Completion:</span>
+                            <span>${currentWeek.completionPercentage}%</span>
+                        </div>
+                        <div class="comparison-stat">
+                            <span>Exercises:</span>
+                            <span>${currentWeek.exercises.length}</span>
+                        </div>
+                        <div class="comparison-stat">
+                            <span>Workouts Done:</span>
+                            <span>${Object.values(currentWeek.tracking).filter(v => v).length}</span>
+                        </div>
+                        <div class="comparison-photos">
+                            ${['front', 'side', 'back'].map(type => `
+                                <div class="comparison-photo">
+                                    ${currentWeek.photos && currentWeek.photos[type] 
+                                        ? `<img src="${currentWeek.photos[type]}">` 
+                                        : ''}
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    <div class="comparison-week">
+                        <div class="comparison-title">${compareWeek.name}</div>
+                        <div class="comparison-stat">
+                            <span>Completion:</span>
+                            <span>${compareWeek.completionPercentage}%</span>
+                        </div>
+                        <div class="comparison-stat">
+                            <span>Exercises:</span>
+                            <span>${compareWeek.exercises.length}</span>
+                        </div>
+                        <div class="comparison-stat">
+                            <span>Workouts Done:</span>
+                            <span>${Object.values(compareWeek.tracking).filter(v => v).length}</span>
+                        </div>
+                        <div class="comparison-photos">
+                            ${['front', 'side', 'back'].map(type => `
+                                <div class="comparison-photo">
+                                    ${compareWeek.photos && compareWeek.photos[type] 
+                                        ? `<img src="${compareWeek.photos[type]}">` 
+                                        : ''}
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('comparisonContent').innerHTML = html;
+        }
+
+        // ========== CHART ==========
+        function renderChart() {
+            const canvas = document.getElementById('progressChart');
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+            
+            const width = canvas.width;
+            const height = canvas.height;
+            const padding = 40;
+            
+            ctx.clearRect(0, 0, width, height);
+            
+            const dataPoints = state.weeks.slice(-13).map(w => w.completionPercentage);
+            
+            if (dataPoints.length === 0) return;
+            
+            // Axes
+            ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--border');
+            ctx.lineWidth = 1;
+            
+            ctx.beginPath();
+            ctx.moveTo(padding, padding);
+            ctx.lineTo(padding, height - padding);
+            ctx.lineTo(width - padding, height - padding);
+            ctx.stroke();
+            
+            // Y-axis labels
+            ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--text-tertiary');
+            ctx.font = '10px monospace';
+            ctx.textAlign = 'right';
+            for (let i = 0; i <= 100; i += 25) {
+                const y = height - padding - (i / 100) * (height - 2 * padding);
+                ctx.fillText(i + '%', padding - 8, y + 3);
+            }
+            
+            // Line and points
+            const stepX = dataPoints.length > 1 
+                ? (width - 2 * padding) / (dataPoints.length - 1)
+                : (width - 2 * padding) / 2;
+            
+            if (dataPoints.length > 1) {
+                ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent');
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                
+                dataPoints.forEach((point, index) => {
+                    const x = padding + index * stepX;
+                    const y = height - padding - (point / 100) * (height - 2 * padding);
+                    
+                    if (index === 0) {
+                        ctx.moveTo(x, y);
+                    } else {
+                        ctx.lineTo(x, y);
+                    }
+                });
+                
+                ctx.stroke();
+            }
+            
+            // Points
+            ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent');
+            dataPoints.forEach((point, index) => {
+                const x = dataPoints.length === 1 
+                    ? padding + stepX  
+                    : padding + index * stepX;
+                const y = height - padding - (point / 100) * (height - 2 * padding);
+                
+                ctx.beginPath();
+                ctx.arc(x, y, 4, 0, Math.PI * 2);
+                ctx.fill();
+            });
+        }
+
+        // ========== TIMER ==========
+        function startTimer() {
+            if (timerInterval) return;
+            timerInterval = setInterval(() => {
+                timerSeconds++;
+                updateTimerDisplay();
+            }, 1000);
+        }
+
+        function stopTimer() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+        }
+
+        function resetTimer() {
+            stopTimer();
+            timerSeconds = 0;
+            updateTimerDisplay();
+        }
+
+        function updateTimerDisplay() {
+            const hours = Math.floor(timerSeconds / 3600);
+            const minutes = Math.floor((timerSeconds % 3600) / 60);
+            const seconds = timerSeconds % 60;
+            
+            const display = [hours, minutes, seconds]
+                .map(n => n.toString().padStart(2, '0'))
+                .join(':');
+            
+            document.getElementById('timerDisplay').textContent = display;
+        }
+
+        // ========== THEMES ==========
+        function renderThemeGrid() {
+            const container = document.getElementById('themeGrid');
+            container.innerHTML = Object.keys(themes).map(key => {
+                const theme = themes[key];
+                const isActive = key === state.currentTheme;
+                return `
+                    <div class="theme-option ${isActive ? 'active' : ''}" onclick="applyTheme('${key}')">
+                        <div class="theme-preview" style="background: ${theme.vars['--accent']}"></div>
+                        <div class="theme-name">${theme.name}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function applyTheme(themeKey) {
+            const theme = themes[themeKey];
+            const root = document.documentElement;
+            
+            Object.keys(theme.vars).forEach(varName => {
+                root.style.setProperty(varName, theme.vars[varName]);
+            });
+            
+            state.currentTheme = themeKey;
+            saveState();
+            renderThemeGrid();
+            renderChart();
+        }
+
+        // ========== TABS ==========
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById('tab-' + tabName).classList.add('active');
+            
+            if (tabName === 'stats') {
+                renderMilestones();
+            } else if (tabName === 'compare') {
+                renderCompareWeekSelect();
+            }
+        }
+
+        // ========== SOUND ==========
+        function toggleSound() {
+            state.soundEnabled = document.getElementById('soundToggle').checked;
+            saveState();
+        }
+
+        function playClickSound() {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.value = 800;
+            oscillator.type = 'sine';
+            
+            gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.1);
+        }
+
+        // ========== IMPORT/EXPORT ==========
+        function exportData() {
+            const dataStr = JSON.stringify(state, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'discipline-tracker-pro-backup.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function importData(input) {
+            const file = input.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const imported = JSON.parse(e.target.result);
+                    state = imported;
+                    saveState();
+                    init();
+                    alert('Data imported successfully!');
+                } catch (error) {
+                    alert('Error importing data. Please check the file format.');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // ========== MODALS ==========
+        function openModal(id) {
+            document.getElementById(id).classList.add('active');
+            if (id === 'templatesModal') {
+                renderTemplates();
+            }
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+        }
+
+        // ========== SIDEBAR TOGGLE ==========
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('collapsed');
+        }
+
+        // ========== START ==========
+        init();
+
+        window.addEventListener('resize', () => {
+            renderChart();
+        });
+
+        // Auto-save notes and measurements
+        document.getElementById('weekNotes').addEventListener('input', saveCurrentWeekData);
+        document.getElementById('measureWeight').addEventListener('input', saveCurrentWeekData);
+        document.getElementById('measureBF').addEventListener('input', saveCurrentWeekData);
+        document.getElementById('measureCustom1').addEventListener('input', saveCurrentWeekData);
+        document.getElementById('measureCustom2').addEventListener('input', saveCurrentWeekData);
+    </script>
+</body>
+</html>
